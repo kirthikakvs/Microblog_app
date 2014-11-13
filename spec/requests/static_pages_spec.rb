@@ -2,18 +2,24 @@ require 'spec_helper'
 
 describe "Static pages" do
 
-	let(:page_title) { "Microblog App" }
+  let(:base_title) { "Ruby on Rails Tutorial Sample App" }
 
   describe "Home page" do
 
-    it "should have the h1 'Microblog App'" do
+    it "should have the h1 'Microblog App '" do
       visit '/static_pages/home'
       page.should have_selector('h1', :text => 'Microblog App')
     end
-    it "should have the right title" do
+
+    it "should have the base title" do
       visit '/static_pages/home'
       page.should have_selector('title',
-                    :text => "#{page_title} | Home")
+                        :text => "Microblog App")
+    end
+
+    it "should not have a custom page title" do
+      visit '/static_pages/home'
+      page.should_not have_selector('title', :text => '| Home')
     end
   end
   describe "Help page" do
@@ -25,7 +31,7 @@ describe "Static pages" do
     it "should have the right title" do
       visit '/static_pages/help'
       page.should have_selector('title',
-                    :text => "#{page_title} | Help")
+                    :text => "Microblog App")
     end
   end
   describe "About page" do
@@ -37,7 +43,7 @@ describe "Static pages" do
     it "should have the right title" do
       visit '/static_pages/about'
       page.should have_selector('title',
-                    :text => "#{page_title} | About us")
+                    :text => "Microblog App")
     end
   end
   describe "Contact page" do
@@ -49,7 +55,7 @@ describe "Static pages" do
     it "should have the right title" do
       visit '/static_pages/contact'
       page.should have_selector('title',
-                    :text => "Microblog App | Contact us")
+                    :text => "Microblog App")
     end
   end
 end
