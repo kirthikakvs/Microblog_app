@@ -6,11 +6,16 @@ describe "Authentication" do
       before { visit signin_path }
       it { should have_selector('h1',    text: 'Sign in') }
       it { should have_selector('title', text: 'Sign in') }
+      it { should_not have_link('Users') }
+      it { should_not have_link('Profile') }
+      it { should_not have_link('Settings') }
+      it { should_not have_link('Sign out', href: signout_path) }
+      it { should have_link('Sign in', href: signin_path) }
   end
   describe "signin" do
     before { visit signin_path }
     describe "with invalid information" do
-      before { click_button "Sign in" }
+      before { sign_in user }
       it { should have_selector('title', text: 'Sign in') }
       it { should have_error_message('Invalid') }
       describe "after visiting another page" do
@@ -37,6 +42,21 @@ describe "Authentication" do
     end
   end
   describe "authorization" do
+    describe "for signed in users" do
+      let(:user) { FactoryGirl.create(:user) }
+      let(:new_user) { FactoryGirl.attributes_for(:user) }
+      before { sign_in user }
+
+      describe "using a 'new' action" do
+        before { get new_user_path }
+        specify { response.should redirect_to(root_path) }
+      end
+
+      describe "using a 'create' action" do
+        before { post users_path new_user }
+        specify { response.should redirect_to(root_path) }
+      end         
+    end
     describe "for non-signed-in users" do
       let(:user) { FactoryGirl.create(:user) }
       describe "when attempting to visit a protected page" do
@@ -44,13 +64,24 @@ describe "Authentication" do
           visit edit_user_path(user)
           fill_in "Email",    with: user.email
           fill_in "Password", with: user.password
-          click_button "Sign in"
+          sign_in user
         end
 
         describe "after signing in" do
-
           it "should render the desired protected page" do
             page.should have_selector('title', text: 'Edit user')
+          end
+          describe "when signing in again" do
+            before do
+              delete signout_path
+              visit signin_path
+              fill_in "Email",    with: user.email
+              fill_in "Password", with: user.password
+              click_button "Sign in"
+            end
+            it "should render the default (profile) page" do
+              page.should have_selector('title', text: user.name)
+            end
           end
         end
       end
@@ -93,6 +124,15 @@ describe "Authentication" do
       describe "submitting a DELETE request to the Users#destroy action" do
         before { delete user_path(user) }
         specify { response.should redirect_to(root_url) }
+      end
+    end
+    describe "as admin user" do
+      let(:admin) { FactoryGirl.create(:admin) }
+      before { sign_in admin }
+      describe "can't delete self by submitting DELETE request to Users#destroy" do
+        before { delete user_path(admin) }
+        specify { response.should redirect_to(users_path), 
+        flash[:error].should =~ /Can not delete own admin account!/i }
       end
     end
   end
